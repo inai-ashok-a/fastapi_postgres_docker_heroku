@@ -108,8 +108,15 @@ def create_an_user( obj:User_req,db: Session = Depends(get_db)):
 
 
 @app.put('/api/users/{user_email}',status_code=status.HTTP_200_OK)
-def update_an_user(user_email:str,obj:User_req,db: Session = Depends(get_db),users: User_req = Depends(reuseable_oauth)):
-    field_to_update=db.query(User).filter(User.email==user_email).first()
+def update_an_user(users_email:str,obj:User_req,db: Session = Depends(get_db),users: User_req = Depends(reuseable_oauth)):
+    global user_email
+    if(user_email!=users_email):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Sry !! You can't access others account"
+        )
+
+    field_to_update=db.query(User).filter(User.email==users_email).first()
 
     if field_to_update is None:
         raise HTTPException(
@@ -123,7 +130,7 @@ def update_an_user(user_email:str,obj:User_req,db: Session = Depends(get_db),use
 
     db.commit()
 
-    user = db.query(User).filter(User.email == user_email).first()
+    user = db.query(User).filter(User.email == users_email).first()
 
     return {
 
@@ -136,6 +143,13 @@ def update_an_user(user_email:str,obj:User_req,db: Session = Depends(get_db),use
 @app.delete('/api/users/{user_email}')
 def delete_user(email : str,db: Session = Depends(get_db),users: User_req = Depends(reuseable_oauth)):
     user_to_delete = db.query(User).filter(User.email== email).first()
+
+    global user_email
+    if (user_email != email):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Sry !! You can't access others account"
+        )
 
     if user_to_delete is None:
         raise HTTPException(
